@@ -19,8 +19,8 @@ this.ckan.module('spatial-query', function ($, _) {
     template: {
       buttons: [
         '<div id="dataset-map-edit-buttons">',
-        '<a href="javascript:;" class="btn cancel">Cancel</a> ',
-        '<a href="javascript:;" class="btn apply disabled">Apply</a>',
+        //'<a href="javascript:;" class="btn cancel">Cancel</a> ',
+        '<a href="javascript:;" class="btn apply disabled">Search</a>',
         '</div>'
       ].join('')
     },
@@ -69,7 +69,7 @@ this.ckan.module('spatial-query', function ($, _) {
       var extentLayer;
       var previous_box;
       var previous_extent;
-      var is_exanded = false;
+      var is_expanded = false;
       var should_zoom = true;
       var form = $("#dataset-search");
       // CKAN 2.1
@@ -96,50 +96,61 @@ this.ckan.module('spatial-query', function ($, _) {
         }
       );
 
-      // Initialize the draw control
-      map.addControl(new L.Control.Draw({
-        position: 'topright',
-        draw: {
-          polyline: false,
-          polygon: false,
-          circle: false,
-          marker: false,
-          rectangle: {shapeOptions: module.options.style}
-        }
-      }));
+      // This is required to control transition between Pan/Drag Map and Draw Rectangle mode.
+      var rectangleDrawButton = new L.Draw.Rectangle(map, {shapeOptions: module.options.style});
 
-      // OK add the expander
-      $('a.leaflet-draw-draw-rectangle', module.el).on('click', function(e) {
-        if (!is_exanded) {
-          $('body').addClass('dataset-map-expanded');
-          if (should_zoom && !extentLayer) {
-            map.zoomIn();
-          }
-          resetMap();
-          is_exanded = true;
-        }
+      //Button to enable Draw Rectangle mode
+      var drawRectangleButton = L.easyButton('&#11034;', function(btn, map){
+          rectangleDrawButton.enable();
       });
+      // Button to enable Pan/Drag Map mode.
+      var panDragButton = L.easyButton('&#9995;', function(btn, map){
+          rectangleDrawButton.disable();
+      });
+
+      // Create a toolbar for Draw Rectangle and Pan/Drag Map buttons.
+      L.easyBar([drawRectangleButton, panDragButton]).addTo(map);
+
+      // Button to expand/compress the map.
+      var expandCompressMapButton  = L.easyButton({
+        id: 'expand-map-button',  // an id for the generated button
+        position: 'topright',      // inherited from L.Control -- the corner it goes in
+        type: 'replace',          // set to animate when you're comfy with css
+        leafletClasses: true,     // use leaflet classes to style the button?
+        states:[
+            {
+              stateName: 'not-expanded',
+              onClick: function(button, map){
+                $('body').addClass('dataset-map-expanded');
+                resetMap();
+                map.zoomIn();
+                button.state('expanded');
+              },
+              title: 'Expand map',
+              icon: '&Gt;'
+            },
+            {
+              stateName: 'expanded',
+              onClick: function(button, map){
+                $('body').removeClass('dataset-map-expanded');
+                resetMap();
+                map.zoomOut();
+                button.state('not-expanded');
+              },
+              title: 'Compress map',
+              icon: '&Lt;'
+            }
+          ]
+      });
+      expandCompressMapButton.addTo(map);
 
       // Setup the expanded buttons
       buttons = $(module.template.buttons).insertBefore('#dataset-map-attribution');
-
-      // Handle the cancel expanded action
-      $('.cancel', buttons).on('click', function() {
-        $('body').removeClass('dataset-map-expanded');
-        if (extentLayer) {
-          map.removeLayer(extentLayer);
-        }
-        setPreviousExtent();
-        setPreviousBBBox();
-        resetMap();
-        is_exanded = false;
-      });
 
       // Handle the apply expanded action
       $('.apply', buttons).on('click', function() {
         if (extentLayer) {
           $('body').removeClass('dataset-map-expanded');
-          is_exanded = false;
           resetMap();
           // Eugh, hacky hack.
           setTimeout(function() {

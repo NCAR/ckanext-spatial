@@ -37,13 +37,6 @@
 #dataset-map-edit-buttons {
   display: none;
 }
-.leaflet-draw-toolbar a.leaflet-draw-draw-rectangle {
-  background-image: url("../img/pencil.png");
-  background-repeat: no-repeat;
-  background-position: 50% 50%;
-  background-size: 12px 12px;
-  border-radius: 4px;
-}
 .leaflet-draw-actions li {
   display: none;
 }
@@ -90,3 +83,4 @@
 .dataset-map-expanded .wrapper {
   margin-top: 383px;
 }
+
