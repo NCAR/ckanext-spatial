@@ -72,7 +72,6 @@ this.ckan.module('spatial-query', function ($, _) {
             var extentLayer;
             var previous_extent;
             var is_expanded = false;
-            var should_zoom = true;
             var form = $("#dataset-search");
             // CKAN 2.1
             if (!form.length) {
@@ -80,6 +79,10 @@ this.ckan.module('spatial-query', function ($, _) {
             }
 
             var buttons;
+            var rectangleDrawButtonFromLeafletDraw;
+            var drawRectangleButton;
+            var panDragButton;
+
 
             // Add necessary fields to the search form if not already created
             $(['ext_bbox', 'ext_prev_extent']).each(function (index, item) {
@@ -94,27 +97,56 @@ this.ckan.module('spatial-query', function ($, _) {
                 this.options.map_config,
                 {
                     attributionControl: false,
-                    drawControlTooltips: false
+                    drawControlTooltips: false,
+                    maxBounds: [[90, 180], [-90, -180]],
+                    maxBoundsViscosity: 1.0
                 }
             );
 
             // This is required to control transition between Pan/Drag Map and Draw Rectangle mode.
-            var rectangleDrawButton = new L.Draw.Rectangle(map, {shapeOptions: module.options.style});
+            rectangleDrawButtonFromLeafletDraw = new L.Draw.Rectangle(map, {shapeOptions: module.options.style});
 
-            //Button to enable Draw Rectangle mode
-            var drawRectangleButton = L.easyButton('&#11034;', function (btn, map) {
-                expandMapIfNotExpanded();
-                rectangleDrawButton.enable();
+            // Button to draw rectangle bounding box on the map.
+            drawRectangleButton = L.easyButton({
+                id: 'draw-rectangle-button',  // an id for the generated button
+                position: 'topright',      // inherited from L.Control -- the corner it goes in
+                type: 'replace',          // set to animate when you're comfy with css
+                leafletClasses: true,     // use leaflet classes to style the button?
+                states: [
+                    {
+                        stateName: 'drawRectangleState',
+                        onClick: function (button, map) {
+                            expandMap();
+                            rectangleDrawButtonFromLeafletDraw.enable();
+                        },
+                        title: 'Draw Rectangle',
+                        icon: '&#11034;'
+                    }
+                ]
             });
 
             // Button to enable Pan/Drag Map mode.
-            var panDragButton = L.easyButton('&#9995;', function (btn, map) {
-                expandMapIfNotExpanded();
-                rectangleDrawButton.disable();
+            panDragButton = L.easyButton({
+                id: 'pan-drag-button',  // an id for the generated button
+                position: 'topright',      // inherited from L.Control -- the corner it goes in
+                type: 'replace',          // set to animate when you're comfy with css
+                leafletClasses: true,     // use leaflet classes to style the button?
+                states: [
+                    {
+                        stateName: 'panDragMapState',
+                        onClick: function (button, map) {
+                            expandMap();
+                            rectangleDrawButtonFromLeafletDraw.disable();
+                        },
+                        title: 'Pan/Drag Map',
+                        icon: '&#9995;'
+                    }
+                ]
             });
 
             // Create a toolbar for Draw Rectangle and Pan/Drag Map buttons.
-            L.easyBar([drawRectangleButton, panDragButton]).addTo(map);
+            L.easyBar([drawRectangleButton, panDragButton], {position: 'topright'})
+                .addTo(map, module.options.style);
 
             // Setup the expanded buttons
             buttons = $(module.template.buttons).insertBefore('#dataset-map-attribution');
@@ -129,7 +161,7 @@ this.ckan.module('spatial-query', function ($, _) {
                 setPreviousBBBox();
                 resetMap();
                 is_expanded = false;
-                if(previous_extent) {
+                if (previous_extent) {
                     coords = previous_extent.split(',');
                     map.fitBounds([[coords[1], coords[0]], [coords[3], coords[2]]]);
                 }
@@ -173,12 +205,6 @@ this.ckan.module('spatial-query', function ($, _) {
             setPreviousBBBox();
             setPreviousExtent();
 
-            // OK, when we expand we shouldn't zoom then
-            map.on('zoomstart', function (e) {
-                should_zoom = false;
-            });
-
-
             // Is there an existing box from a previous search?
             function setPreviousBBBox() {
                 previous_bbox = module._getParameterByName('ext_bbox');
@@ -208,25 +234,36 @@ this.ckan.module('spatial-query', function ($, _) {
                 L.Util.requestAnimFrame(map.invalidateSize, map, !1, map._container);
             }
 
-            // Add the loading class and submit the form
+            // Submit the form
             function submitForm() {
                 setTimeout(function () {
                     form.submit();
                 }, 800);
             }
+
             // Expands the map and performs one level of zoom-in.
-            function expandMapIfNotExpanded() {
+            function expandMap() {
+                // If not already expanded, expand the map
                 if (!is_expanded) {
+                    //Adding this class expands the map
                     $('body').addClass('dataset-map-expanded');
                     resetMap();
-                    map.zoomIn();
                     is_expanded = true;
+
+                    // If no bounding box on map, zoom two steps to remove grey area
+                    if (!previous_extent) {
+                        map.zoomIn(2);
+                    }
+                    //else zoomIn once to maintain bounding box edges on expanded map
+                    else {
+                        map.zoomIn();
+                    }
                 }
             }
 
             // Expand the map when smaller map is clicked.
             $("#dataset-map-container").on('click', '*', function () {
-                expandMapIfNotExpanded();
+                expandMap();
             });
         }
     }
