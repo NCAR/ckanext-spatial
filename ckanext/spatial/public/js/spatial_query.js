@@ -119,8 +119,8 @@ this.ckan.module('spatial-query', function ($, _) {
                             expandMap();
                             rectangleDrawButtonFromLeafletDraw.enable();
                         },
-                        title: 'Draw Rectangle',
-                        icon: '&#11034;'
+                        title: 'Select an area',
+                        icon: '<img src="/img/draw-rectangle.png" style="margin-left:-2px;margin-top:-2px">'
                     }
                 ]
             });
@@ -138,8 +138,8 @@ this.ckan.module('spatial-query', function ($, _) {
                             expandMap();
                             rectangleDrawButtonFromLeafletDraw.disable();
                         },
-                        title: 'Pan/Drag Map',
-                        icon: '&#9995;'
+                        title: 'Pan/Drag map',
+                        icon: '<img src="/img/pan-drag-map.png" style="margin-left:-17px;margin-top:-12px;">'
                     }
                 ]
             });
