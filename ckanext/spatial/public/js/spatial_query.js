@@ -139,7 +139,7 @@ this.ckan.module('spatial-query', function ($, _) {
                             rectangleDrawButtonFromLeafletDraw.disable();
                         },
                         title: 'Pan/Drag map',
-                        icon: '<img src="/img/pan-drag-map.png" style="margin-left:-17px;margin-top:-12px;">'
+                        icon: '<img src="/img/pan-drag-map.png" style="margin-left:-2px;margin-top:-5px;">'
                     }
                 ]
             });
