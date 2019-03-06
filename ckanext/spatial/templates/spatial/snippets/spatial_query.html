@@ -14,7 +14,7 @@ e.g.
 <section id="dataset-map" class="module module-narrow module-shallow">
   <h2 class="module-heading">
     <i class="icon-medium icon-globe"></i>
-    {{ _('Filter by location') }}
+    {{ _('Location') }}
     <a href="{{ h.remove_url_param(['ext_bbox','ext_prev_extent', 'ext_location']) }}" class="action">{{ _('Clear') }}</a>
   </h2>
   {% set map_config = h.get_common_map_config() %}
