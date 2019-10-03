@@ -34,7 +34,7 @@
       var leafletBaseLayerOptions = jQuery.extend(leafletBaseLayerOptions, {
                 maxZoom: 18,
                 minZoom: 0,
-                noWrap: true
+                noWrap: false
                 });
 
       var baseLayer;
