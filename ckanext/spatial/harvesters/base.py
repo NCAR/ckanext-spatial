@@ -442,6 +442,10 @@ class SpatialHarvester(HarvesterBase):
 
         log = logging.getLogger(__name__ + '.import')
         log.debug('Import stage for harvest object: %s', harvest_object.id)
+        #log.debug('START harvest_object.extras:')
+        #log.debug(pprint.pformat(harvest_object.extras))
+        #log.debug('END harvest_object.extras')
+
 
         if not harvest_object:
             log.error('No harvest object received')
@@ -468,7 +472,15 @@ class SpatialHarvester(HarvesterBase):
             p.toolkit.get_action('package_delete')(context, {'id': harvest_object.package_id})
             log.info('Deleted package {0} with guid {1}'.format(harvest_object.package_id, harvest_object.guid))
 
+            # Try to delete any group with the same GUID
+            try:
+                p.toolkit.get_action('group_purge')(context, {'id': harvest_object.guid})
+            except logic.NotFound:
+                # This package is not associated with a group.
+                pass
+
             return True
+
 
         # Check if it is a non ISO document
         original_document = self._get_object_extra(harvest_object, 'original_document')
@@ -532,6 +544,14 @@ class SpatialHarvester(HarvesterBase):
                 self._save_object_error('Object {0} already has this guid {1}'.format(existing_object.id, iso_guid),
                         harvest_object, 'Import')
                 return False
+
+            # Try to delete any Group associated with the old, outdated GUID
+            try:
+                p.toolkit.get_action('group_purge')(context, {'id': harvest_object.guid})
+            except logic.NotFound:
+                # This package is not associated with a group.
+                pass
+
 
             harvest_object.guid = iso_guid
             harvest_object.add()
