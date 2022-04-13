@@ -25,6 +25,7 @@ spatial_query_js:
   contents:
     - js/vendor/leaflet/leaflet.js
     - js/vendor/leaflet.draw/leaflet.draw.js
+    - js/vendor/leaflet.easybutton/easy-button.js
     - js/common_map.js
     - js/spatial_query.js
 
@@ -34,4 +35,5 @@ spatial_query_css:
   contents:
     - js/vendor/leaflet/leaflet.css
     - js/vendor/leaflet.draw/leaflet.draw.css
+    - js/vendor/leaflet.easybutton/easy-button.css
     - css/spatial_query.css
