@@ -32,7 +32,9 @@
       var mapConfig = mapConfig || {type: 'stamen'};
       var leafletMapOptions = leafletMapOptions || {};
       var leafletBaseLayerOptions = jQuery.extend(leafletBaseLayerOptions, {
-                maxZoom: 18
+                maxZoom: 18,
+                minZoom: 0,
+                noWrap: false
                 });
 
       var baseLayer;

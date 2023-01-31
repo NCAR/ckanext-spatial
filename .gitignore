@@ -5,3 +5,8 @@ syntax: glob
 *~
 dist
 build
+
+## ignore Intellij artifacts
+.idea/
+*.iml
+
