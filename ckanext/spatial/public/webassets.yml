@@ -5,7 +5,8 @@ dataset_map_js:
     preload:
       - base/main
   contents:
-    - js/vendor/leaflet/leaflet.js
+    - js/vendor/leaflet/1.9.3/leaflet.js
+    - js/vendor/leaflet-providers.js
     - js/common_map.js
     - js/dataset_map.js
 
@@ -13,7 +14,8 @@ dataset_map_css:
   filters: cssrewrite
   output: ckanext-spatial/%(version)s_dataset_map.css
   contents:
-    - js/vendor/leaflet/leaflet.css
+    - js/vendor/leaflet/1.9.3/leaflet.css
+    - css/common_map.css
     - css/dataset_map.css
 
 spatial_query_js:
@@ -23,8 +25,9 @@ spatial_query_js:
     preload:
       - base/main
   contents:
-    - js/vendor/leaflet/leaflet.js
-    - js/vendor/leaflet.draw/leaflet.draw.js
+    - js/vendor/leaflet/1.9.3/leaflet.js
+    - js/vendor/leaflet.draw/0.4.14/leaflet.draw.js
+    - js/vendor/leaflet-providers.js
     - js/vendor/leaflet.easybutton/easy-button.js
     - js/common_map.js
     - js/spatial_query.js
@@ -33,7 +36,8 @@ spatial_query_css:
   filters: cssrewrite
   output: ckanext-spatial/%(version)s_spatial_query.css
   contents:
-    - js/vendor/leaflet/leaflet.css
-    - js/vendor/leaflet.draw/leaflet.draw.css
+    - js/vendor/leaflet/1.9.3/leaflet.css
+    - js/vendor/leaflet.draw/0.4.14/leaflet.draw.css
+    - css/common_map.css
     - js/vendor/leaflet.easybutton/easy-button.css
     - css/spatial_query.css
