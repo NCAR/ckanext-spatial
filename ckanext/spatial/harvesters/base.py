@@ -907,7 +907,9 @@ class SpatialHarvester(HarvesterBase):
         valid, profile, errors = validator.is_valid(xml)
         if not valid:
             log.error('Validation errors found using profile {0} for object with GUID {1}'.format(profile, harvest_object.guid))
-            for error in errors:
-                self._save_object_error(error[0], harvest_object, 'Validation', line=error[1])
+
+        # Save warning messages if they exist
+        for error in errors:
+            self._save_object_error(error[0], harvest_object, 'Validation', line=error[1])
 
         return valid, profile, errors
