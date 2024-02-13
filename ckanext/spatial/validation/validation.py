@@ -358,7 +358,7 @@ class Validators(object):
           (is_valid, failed_profile_name, [(error_message_string, error_line_number)])
         '''
 
-
+        warning_message_list = []
         log.debug('Starting validation against profile(s) %s' % ','.join(self.profiles))
         for name in self.profiles:
             validator = self.validators[name]
@@ -368,9 +368,13 @@ class Validators(object):
                 log.info('Validating against "%s" profile failed' % validator.title)
                 log.debug('%r', error_message_list)
                 return False, validator.name, error_message_list
+            elif error_message_list:
+                warning_message_list.extend(error_message_list)
             log.debug('Validated against "%s"', validator.title)
         log.info('Validation passed')
-        return True, None, []
+
+        # Return warning messages for later reporting, but still update the dataset
+        return True, None, warning_message_list
 
 if __name__ == '__main__':
     from sys import argv
