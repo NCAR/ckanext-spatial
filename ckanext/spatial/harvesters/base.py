@@ -531,16 +531,47 @@ class SpatialHarvester(HarvesterBase):
                           .first()
 
         if status == 'delete':
+            # Examine any groups the package belongs to and report when a group becomes empty.
+            package_dict = logic.get_action('package_show')(context, {'id': harvest_object.package_id})
+            group_ids = [group['id'] for group in package_dict['groups']]
+            for group_id in group_ids:
+                warning_message = None
+                try:
+                    group_dict = logic.get_action('group_show')(context, {'id': group_id})
+                    active_group = group_dict['state'] == 'active'
+                    group_name = group_dict['display_name']
+                except logic.NotFound:
+                    active_group = False
+                    group_name = ""
+
+                if active_group and group_dict['package_count'] == 1:
+                    warning_message = 'WARNING: Empty Collection "{0}" exists after deleting dataset.  Collection GUID: {1}'.format(
+                        group_name, group_id)
+                    log.info(warning_message)
+                    self._save_object_error(warning_message, harvest_object, 'Import')
+
+
             # Delete package
             context.update({
                 'ignore_auth': True,
             })
-            p.toolkit.get_action('package_delete')(context, {'id': harvest_object.package_id})
-            log.info('Deleted package {0} with guid {1}'.format(harvest_object.package_id, harvest_object.guid))
+            p.toolkit.get_action('dataset_purge')(context, {'id': harvest_object.package_id})
+            log.info('Deleted and purged package" "{0}" with guid {1}'.format(package_dict['title'], harvest_object.guid))
 
-            # Try to delete any group with the same GUID
+            # If this dataset represents a collection, purge the Collection from the database if the Collection is
+            # empty.  Raise a warning if the Collection is not empty.
             try:
-                p.toolkit.get_action('group_purge')(context, {'id': harvest_object.guid})
+                group_dict = logic.get_action('group_show')(context, {'id': harvest_object.guid})
+                nonempty_group = group_dict['state'] == 'active' and group_dict['package_count'] > 0
+                if nonempty_group:
+                    group_name = group_dict['display_name']
+                    warning_message = 'WARNING: Non-empty Collection "{0}" was deleted; check WAF for GUID: {1}'.format(
+                        group_name, harvest_object.guid)
+                    log.info(warning_message)
+                    self._save_object_error(warning_message, harvest_object, 'Import')
+                else:
+                    p.toolkit.get_action('group_purge')(context, {'id': harvest_object.guid})
+                    log.info('Deleted and purged Group/Collection with GUID: {0}'.format(harvest_object.guid))
             except logic.NotFound:
                 # This package is not associated with a group.
                 pass
