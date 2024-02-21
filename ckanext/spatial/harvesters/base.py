@@ -545,7 +545,7 @@ class SpatialHarvester(HarvesterBase):
                     group_name = ""
 
                 if active_group and group_dict['package_count'] == 1:
-                    warning_message = 'WARNING: Empty Collection "{0}" exists after deleting dataset.  Collection GUID: {1}'.format(
+                    warning_message = 'WARNING: Created Empty Collection "{0}" after deleting dataset.  Collection GUID: {1}'.format(
                         group_name, group_id)
                     log.info(warning_message)
                     self._save_object_error(warning_message, harvest_object, 'Import')
@@ -565,7 +565,7 @@ class SpatialHarvester(HarvesterBase):
                 nonempty_group = group_dict['state'] == 'active' and group_dict['package_count'] > 0
                 if nonempty_group:
                     group_name = group_dict['display_name']
-                    warning_message = 'WARNING: Non-empty Collection "{0}" was deleted; check WAF for GUID: {1}'.format(
+                    warning_message = 'WARNING: Deleted Non-empty Collection "{0}"; check WAF for GUID: {1}'.format(
                         group_name, harvest_object.guid)
                     log.info(warning_message)
                     self._save_object_error(warning_message, harvest_object, 'Import')
