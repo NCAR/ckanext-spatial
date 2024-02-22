@@ -563,13 +563,16 @@ class SpatialHarvester(HarvesterBase):
             try:
                 group_dict = logic.get_action('group_show')(context, {'id': harvest_object.guid})
                 nonempty_group = group_dict['state'] == 'active' and group_dict['package_count'] > 0
-                if nonempty_group:
+                group_just_added = (previous_object and
+                                    harvest_object.harvest_job_id == previous_object.harvest_job_id and
+                                    previous_object.report_status == 'added')
+                if nonempty_group and not group_just_added:
                     group_name = group_dict['display_name']
-                    warning_message = 'WARNING: Deleted Non-empty Collection "{0}"; check WAF for GUID: {1}'.format(
+                    warning_message = 'WARNING: Deleted Non-empty Collection "{0}"; please remove all references in WAF to the GUID: {1}'.format(
                         group_name, harvest_object.guid)
                     log.info(warning_message)
                     self._save_object_error(warning_message, harvest_object, 'Import')
-                else:
+                elif not group_just_added:
                     p.toolkit.get_action('group_purge')(context, {'id': harvest_object.guid})
                     log.info('Deleted and purged Group/Collection with GUID: {0}'.format(harvest_object.guid))
             except logic.NotFound:
