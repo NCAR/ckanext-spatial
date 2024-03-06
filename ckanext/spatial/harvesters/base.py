@@ -535,7 +535,7 @@ class SpatialHarvester(HarvesterBase):
             package_dict = logic.get_action('package_show')(context, {'id': harvest_object.package_id})
             group_ids = [group['id'] for group in package_dict['groups']]
             for group_id in group_ids:
-                warning_message = None
+                warn_message = None
                 try:
                     group_dict = logic.get_action('group_show')(context, {'id': group_id})
                     active_group = group_dict['state'] == 'active'
@@ -545,10 +545,10 @@ class SpatialHarvester(HarvesterBase):
                     group_name = ""
 
                 if active_group and group_dict['package_count'] == 1:
-                    warning_message = 'WARNING: Created Empty Collection "{0}" after deleting dataset.  Collection GUID: {1}'.format(
+                    warn_message = 'WARNING: Created Empty Collection "{0}" after deleting dataset.  Collection GUID: {1}'.format(
                         group_name, group_id)
-                    log.info(warning_message)
-                    self._save_object_error(warning_message, harvest_object, 'Import')
+                    log.info(warn_message)
+                    self._save_object_error(warn_message, harvest_object, 'Import')
 
 
             # Delete package
@@ -563,15 +563,18 @@ class SpatialHarvester(HarvesterBase):
             try:
                 group_dict = logic.get_action('group_show')(context, {'id': harvest_object.guid})
                 nonempty_group = group_dict['state'] == 'active' and group_dict['package_count'] > 0
+                # If a Collection record file is moved or renamed in the WAF, the harvester will perform an "add"
+                # followed by a "delete" operation.   In this case, we don't want to remove the Collection from the
+                # database.
                 group_just_added = (previous_object and
                                     harvest_object.harvest_job_id == previous_object.harvest_job_id and
                                     previous_object.report_status == 'added')
                 if nonempty_group and not group_just_added:
                     group_name = group_dict['display_name']
-                    warning_message = 'WARNING: Deleted Non-empty Collection "{0}"; please remove all references in WAF to the GUID: {1}'.format(
+                    warn_message = 'WARNING: Deleted Non-empty Collection "{0}"; please remove all references in WAF to the GUID: {1}'.format(
                         group_name, harvest_object.guid)
-                    log.info(warning_message)
-                    self._save_object_error(warning_message, harvest_object, 'Import')
+                    log.info(warn_message)
+                    self._save_object_error(warn_message, harvest_object, 'Import')
                 elif not group_just_added:
                     p.toolkit.get_action('group_purge')(context, {'id': harvest_object.guid})
                     log.info('Deleted and purged Group/Collection with GUID: {0}'.format(harvest_object.guid))
@@ -766,11 +769,33 @@ class SpatialHarvester(HarvesterBase):
 
                 log.info('Document with GUID %s unchanged, skipping...' % (harvest_object.guid))
             else:
+                # Check to see if any groups/collections have been removed before updating.   If so, check if any
+                # removed groups/collections have become empty and raise a warning if so.
+                try:
+                    package_dict_old = logic.get_action('package_show')(context, {'id': harvest_object.package_id})
+                    groups_old = [group['id'] for group in package_dict_old.get('groups', [])]
+                    groups_new = [group['id'] for group in package_dict.get('groups', [])]
+                    groups_deleted = [id for id in groups_old if id not in groups_new]
+                    for group_id in groups_deleted:
+                        group_dict = logic.get_action('group_show')(context, {'id': group_id})
+                        active_group = group_dict['state'] == 'active'
+                        group_name = group_dict['display_name']
+                        if active_group and group_dict['package_count'] == 1:
+                            warn_message = (f'WARNING: Created Empty Collection "{group_name}" after collection ' +
+                                            f'reference was removed from child record.  Collection GUID: {group_id}')
+                            log.info(warn_message)
+                            self._save_object_error(warn_message, harvest_object, 'Import')
+                except p.toolkit.ObjectNotFound:
+                    pass
+
                 package_schema = logic.schema.default_update_package_schema()
                 package_schema['tags'] = tag_schema
                 context['schema'] = package_schema
 
                 package_dict['id'] = harvest_object.package_id
+
+
+
                 try:
                     package_id = p.toolkit.get_action('package_update')(context, package_dict)
                     log.info('Updated package %s with guid %s', package_id, harvest_object.guid)
