@@ -575,7 +575,7 @@ class SpatialHarvester(HarvesterBase):
                         group_name, harvest_object.guid)
                     log.info(warn_message)
                     self._save_object_error(warn_message, harvest_object, 'Import')
-                elif not group_just_added:
+                if not group_just_added:
                     p.toolkit.get_action('group_purge')(context, {'id': harvest_object.guid})
                     log.info('Deleted and purged Group/Collection with GUID: {0}'.format(harvest_object.guid))
             except logic.NotFound:
