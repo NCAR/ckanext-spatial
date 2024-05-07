@@ -54,7 +54,7 @@ this.ckan.module('dataset-map', function (jQuery, _) {
 
     _onReady: function(){
 
-      var map, extentLayer, ckanIcon;
+      var map, backgroundLayer, extentLayer, ckanIcon;
 
       if (!this.extent) {
           return false;
@@ -62,9 +62,9 @@ this.ckan.module('dataset-map', function (jQuery, _) {
 
       map = ckan.commonLeafletMap('dataset-map-container', this.options.map_config, {attributionControl: false});
 
-      ckanIcon = L.Icon.extend({options: this.options.styles.point});
+      var ckanIcon = L.Icon.extend({options: this.options.styles.point});
 
-      extentLayer = L.geoJson(this.extent, {
+      var extentLayer = L.geoJson(this.extent, {
           style: this.options.styles.default_,
           pointToLayer: function (feature, latLng) {
             return new L.Marker(latLng, {icon: new ckanIcon})
@@ -72,7 +72,7 @@ this.ckan.module('dataset-map', function (jQuery, _) {
       extentLayer.addTo(map);
 
       if (this.extent.type == 'Point'){
-        map.setView(L.latLng(this.extent.coordinates[1], this.extent.coordinates[0]), 4);
+        map.setView(L.latLng(this.extent.coordinates[1], this.extent.coordinates[0]), 9);
       } else {
         map.fitBounds(extentLayer.getBounds());
       }
