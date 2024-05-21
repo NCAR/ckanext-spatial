@@ -650,6 +650,7 @@ class SpatialHarvester(HarvesterBase):
             # Try to delete any Group associated with the old, outdated GUID
             try:
                 p.toolkit.get_action('group_purge')(context, {'id': harvest_object.guid})
+                log.info('CUSTOM spatial logic: Deleted and purged group with GUID {0}'.format(harvest_object.guid))
             except logic.NotFound:
                 # This package is not associated with a group.
                 pass
