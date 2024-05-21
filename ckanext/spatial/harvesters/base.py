@@ -560,6 +560,7 @@ class SpatialHarvester(HarvesterBase):
 
             # If this dataset represents a collection, purge the Collection from the database if the Collection is
             # empty.  Raise a warning if the Collection is not empty.
+            # Keep the collection for now, so we can check if child datasets have been deleted later.
             try:
                 group_dict = logic.get_action('group_show')(context, {'id': harvest_object.guid})
                 nonempty_group = group_dict['state'] == 'active' and group_dict['package_count'] > 0
@@ -575,9 +576,7 @@ class SpatialHarvester(HarvesterBase):
                         group_name, harvest_object.guid)
                     log.info(warn_message)
                     self._save_object_error(warn_message, harvest_object, 'Import')
-                if not group_just_added:
-                    p.toolkit.get_action('group_purge')(context, {'id': harvest_object.guid})
-                    log.info('Deleted and purged Group/Collection with GUID: {0}'.format(harvest_object.guid))
+
             except logic.NotFound:
                 # This package is not associated with a group.
                 pass
