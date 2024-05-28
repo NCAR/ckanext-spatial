@@ -771,9 +771,9 @@ class SpatialHarvester(HarvesterBase):
                         group_dict = logic.get_action('group_show')(context, {'id': group_id})
                         active_group = group_dict['state'] == 'active'
                         group_name = group_dict['display_name']
+                        warn_message = ('WARNING: Created Empty Collection "{0}" after collection '.format(group_name) +
+                                        'reference was removed from child.  Collection GUID: {0}'.format(group_id))
                         if active_group and group_dict['package_count'] == 1:
-                            warn_message = (f'WARNING: Created Empty Collection "{group_name}" after collection ' +
-                                            f'reference was removed from child record.  Collection GUID: {group_id}')
                             log.info(warn_message)
                             self._save_object_error(warn_message, harvest_object, 'Import')
                 except p.toolkit.ObjectNotFound:
