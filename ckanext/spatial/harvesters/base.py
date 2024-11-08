@@ -34,6 +34,8 @@ from ckanext.spatial.harvested_metadata import ISODocument
 from ckanext.spatial.interfaces import ISpatialHarvester
 from ckantoolkit import config
 
+from ckanext.dsetsearch.group_api import getGroupNameFromID
+
 log = logging.getLogger(__name__)
 
 DEFAULT_VALIDATOR_PROFILES = ['iso19139']
@@ -544,8 +546,8 @@ class SpatialHarvester(HarvesterBase):
                     group_name = ""
 
                 if active_group and group_dict['package_count'] == 1:
-                    warn_message = 'WARNING: Created Empty Collection "{0}" after deleting dataset.  Collection GUID: {1}'.format(
-                        group_name, group_id)
+                    warn_message = ('WARNING: Created Empty Collection "{0}" after deleting dataset.'.format(group_name) + 
+                                    ' Collection ID in CKAN: {0}'.format(group_dict['id']))
                     log.info(warn_message)
                     self._save_object_error(warn_message, harvest_object, 'Import')
 
@@ -554,27 +556,33 @@ class SpatialHarvester(HarvesterBase):
             context.update({
                 'ignore_auth': True,
             })
-            p.toolkit.get_action('dataset_purge')(context, {'id': harvest_object.package_id})
-            log.info('Deleted and purged package" "{0}" with guid {1}'.format(package_dict['title'], harvest_object.guid))
+            log.info('About to purge package" "{0}" with ckan ID {1}'.format(package_dict['title'], package_dict['id']))
+            p.toolkit.get_action('dataset_purge')(context, {'id': package_dict['id']})
+            log.info('Purged package" "{0}" with ckan ID {1}'.format(package_dict['title'], package_dict['id']))
 
             # If this dataset represents a collection, purge the Collection from the database if the Collection is
             # empty.  Raise a warning if the Collection is not empty.
-            # Keep the collection for now, so we can check if child datasets have been deleted later.
+            # Keep the collection for now, so we can check if child datasets have been added or deleted later.
             try:
-                group_dict = logic.get_action('group_show')(context, {'id': harvest_object.guid})
+                group_name = getGroupNameFromID(harvest_object.guid)
+                group_dict = logic.get_action('group_show')(context, {'id': group_name})
                 nonempty_group = group_dict['state'] == 'active' and group_dict['package_count'] > 0
                 # If a Collection record file is moved or renamed in the WAF, the harvester will perform an "add"
                 # followed by a "delete" operation.   In this case, we don't want to remove the Collection from the
                 # database.
-                group_just_added = (previous_object and
+                group_just_added = (previous_object and harvest_object and 
                                     harvest_object.harvest_job_id == previous_object.harvest_job_id and
                                     previous_object.report_status == 'added')
                 if nonempty_group and not group_just_added:
-                    group_name = group_dict['display_name']
-                    warn_message = 'WARNING: Deleted Non-empty Collection "{0}"; please remove all references in WAF to the GUID: {1}'.format(
-                        group_name, harvest_object.guid)
+                    warn_message = ('WARNING: Deleted Non-empty Collection "{0}";'.format(group_name) + 
+                                    ' please remove all references in WAF to the GUID: {0}'.format(harvest_object.guid) +
+                                    ' Collection ID in CKAN: {0}'.format(group_dict['id']))
                     log.info(warn_message)
                     self._save_object_error(warn_message, harvest_object, 'Import')
+                elif not group_just_added:
+                    log.info('About to purge group" "{0}" with ckan ID {1}'.format(group_dict['title'], group_dict['id']))
+                    p.toolkit.get_action('group_purge')(context, {'id': group_dict['id']})
+                    log.info('Purged group" "{0}" with ckan ID {1}'.format(group_dict['title'], group_dict['id']))
 
             except logic.NotFound:
                 # This package is not associated with a group.
@@ -720,7 +728,7 @@ class SpatialHarvester(HarvesterBase):
 
             try:
                 package_id = p.toolkit.get_action('package_create')(context, package_dict)
-                log.info('Created new package %s with guid %s', package_id, harvest_object.guid)
+                log.info('Created new package with CKAN ID %s and with ISO guid %s', package_id, harvest_object.guid)
             except p.toolkit.ValidationError as e:
                 self._save_object_error('Validation Error: %s' % str(e.error_summary), harvest_object, 'Import')
                 return False
@@ -771,7 +779,7 @@ class SpatialHarvester(HarvesterBase):
                         active_group = group_dict['state'] == 'active'
                         group_name = group_dict['display_name']
                         warn_message = ('WARNING: Created Empty Collection "{0}" after collection '.format(group_name) +
-                                        'reference was removed from child.  Collection GUID: {0}'.format(group_id))
+                                        'reference was removed from child.  Collection ID in CKAN: {0}'.format(group_dict['id']))
                         if active_group and group_dict['package_count'] == 1:
                             log.info(warn_message)
                             self._save_object_error(warn_message, harvest_object, 'Import')
@@ -783,7 +791,6 @@ class SpatialHarvester(HarvesterBase):
                 context['schema'] = package_schema
 
                 package_dict['id'] = harvest_object.package_id
-
 
 
                 try:
