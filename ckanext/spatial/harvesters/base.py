@@ -24,7 +24,7 @@ from ckan.lib.helpers import json
 from ckan import logic
 from ckan.lib.navl.validators import not_empty, unicode_safe
 from ckan.lib.search.index import PackageSearchIndex
-from ckan.lib.munge import munge_tag
+from ckan.lib.munge import munge_tag, munge_title_to_name
 
 from ckanext.harvest.harvesters.base import HarvesterBase
 from ckanext.harvest.model import HarvestObject
@@ -33,8 +33,6 @@ from ckanext.spatial.validation import Validators, all_validators
 from ckanext.spatial.harvested_metadata import ISODocument
 from ckanext.spatial.interfaces import ISpatialHarvester
 from ckantoolkit import config
-
-from ckanext.dsetsearch.group_api import getGroupNameFromID
 
 log = logging.getLogger(__name__)
 
@@ -499,6 +497,11 @@ class SpatialHarvester(HarvesterBase):
         '''
         self.__base_transform_to_iso_called = True
         return None
+
+    def getGroupNameFromID(group_id):
+        group_name = munge_title_to_name(group_id)
+        group_name = re.sub('-+', '-', group_name)  # collapse multiple dashes
+        return group_name
 
     def import_stage(self, harvest_object):
         context = {
