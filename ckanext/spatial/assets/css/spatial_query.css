@@ -1,0 +1,58 @@
+.module-narrow #dataset-map-container {
+  height: 200px;
+  font-size: 14px;
+}
+.module-content #dataset-map-container {
+  height: 250px;
+}
+.module-heading .action {
+  float: right;
+  color: #888888;
+  font-size: 12px;
+  line-height: 20px;
+  text-decoration: underline;
+}
+.module-narrow #dataset-map-attribution {
+  margin: 5px 8px;
+  color: #666;
+}
+.leaflet-draw-label-single {
+  display: none;
+}
+.leaflet-draw-label-subtext {
+  display: none;
+}
+#field-location {
+  width: 190px;
+}
+.select2-results .select2-no-results {
+  padding: 3px 6px;
+}
+#dataset-map-edit {
+  margin: 5px 8px;
+}
+#dataset-map-edit-buttons {
+  display: none;
+}
+.leaflet-touch .leaflet-draw-toolbar a.leaflet-draw-draw-rectangle {
+  background-image: url("/img/pencil.png");
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+  background-size: 12px 12px;
+  border-radius: 4px;
+}
+.leaflet-draw-actions li {
+  display: none;
+}
+
+#draw-map-container {
+  width: 870px;
+  height: 384px;
+  background-color: white;
+  border: 1px solid #CCC;
+  margin: 0;
+}
+
+.modal-spatial-query {
+  max-width: 900px;
+}

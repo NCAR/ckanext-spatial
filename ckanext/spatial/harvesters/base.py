@@ -2,8 +2,7 @@ from urllib.parse import urlparse
 from urllib.request import urlopen
 
 import re
-import cgitb
-import warnings
+import traceback
 
 import sys
 import logging
@@ -16,6 +15,7 @@ import mimetypes
 
 from owslib import wms
 import requests
+import sqlalchemy as sa
 from lxml import etree
 
 from ckan import plugins as p
@@ -40,12 +40,7 @@ DEFAULT_VALIDATOR_PROFILES = ['iso19139']
 
 
 def text_traceback():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        res = 'the original traceback:'.join(
-            cgitb.text(sys.exc_info()).split('the original traceback:')[1:]
-        ).strip()
-    return res
+    return "".join(traceback.format_exception(*sys.exc_info()))
 
 
 def guess_standard(content):
@@ -726,7 +721,9 @@ class SpatialHarvester(HarvesterBase):
             # Defer constraints and flush so the dataset can be indexed with
             # the harvest object id (on the after_show hook from the harvester
             # plugin)
-            model.Session.execute('SET CONSTRAINTS harvest_object_package_id_fkey DEFERRED')
+            model.Session.execute(
+                sa.text('SET CONSTRAINTS harvest_object_package_id_fkey DEFERRED')
+            )
             model.Session.flush()
 
             try:
@@ -932,7 +929,7 @@ class SpatialHarvester(HarvesterBase):
         content = response.text
 
         # Remove original XML declaration
-        content = re.sub('<\?xml(.*)\?>', '', content)
+        content = re.sub('<xml(.*)>', '', content)
 
         # Get rid of the BOM and other rubbish at the beginning of the file
         content = re.sub('.*?<', '<', content, 1)
@@ -955,7 +952,7 @@ class SpatialHarvester(HarvesterBase):
         if not validator:
             validator = self._get_validator()
 
-        document_string = re.sub('<\?xml(.*)\?>', '', document_string)
+        document_string = re.sub('<xml(.*)>', '', document_string)
 
         try:
             xml = etree.fromstring(document_string)

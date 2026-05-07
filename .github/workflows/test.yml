@@ -22,15 +22,11 @@ jobs:
         include:
           - ckan-version: "2.11"
             ckan-image: "ckan/ckan-dev:2.11-py3.10"
-            solr-image: "2.10-solr9-spatial"
+            solr-image: "2.11-solr9-spatial"
             harvester-version: 'master'
           - ckan-version: "2.10"
             ckan-image: "ckan/ckan-dev:2.10-py3.10"
             solr-image: "2.10-solr9-spatial"
-            harvester-version: 'master'
-          - ckan-version: 2.9
-            ckan-image: "amercader/ckan-dev:2.9-py3.9"
-            solr-image: 2.9-solr9-spatial
             harvester-version: 'master'
       fail-fast: false
     
@@ -38,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.ckan-image }}
+      options: --user root
     services:
       solr:
         image: ckan/ckan-solr:${{ matrix.solr-image }}
@@ -49,7 +46,7 @@ jobs:
           POSTGRES_DB: postgres
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
       redis:
-        image: redis:3
+        image: redis:7
     env:
       CKAN_SQLALCHEMY_URL: postgresql://ckan_default:pass@postgres/ckan_test
       CKAN_DATASTORE_WRITE_URL: postgresql://datastore_write:pass@postgres/datastore_test
@@ -63,7 +60,8 @@ jobs:
 
     - name: Install dependencies (common)
       run: |
-        DEBIAN_FRONTEND=noninteractive apt-get --assume-yes --quiet install \
+        DEBIAN_FRONTEND=noninteractive apt-get update && \
+        apt-get --assume-yes --quiet install \
           python3-dev \
           libxml2-dev \
           libxslt1-dev \
@@ -72,7 +70,7 @@ jobs:
     - name: Install dependencies from requirements.txt
       run: |
         pip install -r requirements.txt
-        pip install pytest-ckan
+        pip install -r dev-requirements.txt
 
     - name: Install harvester
       run: |
@@ -95,6 +93,9 @@ jobs:
       run: |
         # Replace default path to CKAN core config file with the one on the container
         sed -i -e 's/use = config:.*/use = config:\/srv\/app\/src\/ckan\/test-core.ini/' test.ini
-
+    - name: Set up db
+      run: |
+        ckan -c test.ini db init
+        ckan -c test.ini db pending-migrations --apply
     - name: Run tests
       run: pytest --ckan-ini=test.ini --cov=ckanext.spatial --cov-report term-missing --cov-append --disable-warnings ckanext/spatial/tests
